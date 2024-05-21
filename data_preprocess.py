@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
-print(np.__version__)
+
 games = pd.read_excel("dataset/BGG_Data_Set.xlsx")
 games["Year Published"].replace(0, np.nan, inplace=True)
 
@@ -22,6 +23,7 @@ domains_encoded = mlb_domains.fit_transform(games['Domains'])
 
 mechanics_df = pd.DataFrame(mechanics_encoded, columns=mlb_mechanics.classes_)
 domains_df = pd.DataFrame(domains_encoded, columns=mlb_domains.classes_)
+
 
 games = pd.concat([games, mechanics_df, domains_df], axis=1)
 print(games.tail(10))
