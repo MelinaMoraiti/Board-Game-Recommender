@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.preprocessing import MultiLabelBinarizer, MinMaxScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from pearson import pearson_correlation
 games = pd.read_excel("dataset/BGG_Data_Set.xlsx")
@@ -31,7 +31,7 @@ games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
 # Select features we care about correlation
 features_to_correlate = list(mechanics_encoded.columns) + list(domains_encoded.columns) 
 
-favorite_game_title = 'The Quest for El Dorado'  # Replace with the actual favorite game name
+favorite_game_title = 'Tsuro'  # Replace with the actual favorite game name
 if favorite_game_title not in games['Name'].values:
     raise ValueError(f"The game '{favorite_game_title}' is not found in the dataset.")
 favorite_index = games[games['Name'] == favorite_game_title].index[0]
@@ -41,11 +41,18 @@ favorite_vector = games.loc[favorite_index, features_to_correlate].values
 # Calculate Pearson correlation between the favorite game vector and all games
 correlations = pearson_correlation(favorite_vector, games[features_to_correlate].values)
 
+# Normalize the rating average to the range [0, 1]
+scaler = MinMaxScaler()
+games['Rating Average Normalized'] = scaler.fit_transform(games[['Rating Average']])
+
 # Add correlations to the DataFrame
 games['pearson_correlation'] = correlations
 
+# Combine Pearson correlation and normalized rating average to favour games with higher ratings in recommendations
+games['recommendation_score'] = 0.5 * games['pearson_correlation'] + 0.5 * games['Rating Average Normalized']
+
 # Display the top 10 recommended games based on Pearson correlation
-recommended_games = games.sort_values(by='pearson_correlation', ascending=False).head(11)
-print(recommended_games[['Name','Rating Average','Year Published', 'pearson_correlation']])
+recommended_games = games.sort_values(by='recommendation_score', ascending=False).head(10)
+print(recommended_games[['Name', 'Rating Average', 'Year Published', 'pearson_correlation', 'Rating Average Normalized', 'recommendation_score']])
 
 
