@@ -1,29 +1,51 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
-
+from sklearn.metrics.pairwise import cosine_similarity
+from pearson import pearson_correlation
 games = pd.read_excel("dataset/BGG_Data_Set.xlsx")
-games["Year Published"].replace(0, np.nan, inplace=True)
 
+# Replace zeroes in 'years' with nan
+games["Year Published"].replace(0, np.nan, inplace=True)
 median_year = games['Year Published'].median()
 # Replace zeroes in 'years' with median
 games['Year Published'].fillna(median_year, inplace=True)
-
 # Replace empty strings in 'domains' with 'Unknown' split 'mechanics' and 'domains' into lists.
-games['Domains'] = games['Domains'].apply(lambda x: ['Unknown'] if pd.isna(x) or x.strip() == '' else x.split(', '))
-games['Mechanics'] = games['Mechanics'].apply(lambda x: x.split(', ') if isinstance(x, str) else [])
+# Correct way to fill missing values
+games['Domains'] = games['Domains'].fillna('Unknown')
+games['Mechanics'] = games['Mechanics'].fillna('Unknown')
 
-# Feature Extraction
-# Use techniques like One-Hot Encoding or TF-IDF Vectorization for categorical features such as 'mechanics' and 'domains'.
+# Split 'Mechanics' and 'Domains' columns into lists
+games['Domains'] = games['Domains'].apply(lambda x: [domain.strip().lower() for domain in x.split(',')])
+games['Mechanics'] = games['Mechanics'].apply(lambda x: [mechanic.strip().lower() for mechanic in x.split(',')])
+
+# Use MultiLabelBinarizer to create binary features
 mlb_mechanics = MultiLabelBinarizer()
 mlb_domains = MultiLabelBinarizer()
-mechanics_encoded = mlb_mechanics.fit_transform(games['Mechanics'])
-domains_encoded = mlb_domains.fit_transform(games['Domains'])
+mechanics_encoded = pd.DataFrame(mlb_mechanics.fit_transform(games['Mechanics']), columns=mlb_mechanics.classes_, index=games.index)
+domains_encoded = pd.DataFrame(mlb_domains.fit_transform(games['Domains']), columns=mlb_domains.classes_, index=games.index)
 
-mechanics_df = pd.DataFrame(mechanics_encoded, columns=mlb_mechanics.classes_)
-domains_df = pd.DataFrame(domains_encoded, columns=mlb_domains.classes_)
+# Concatenate encoded features with the original DataFrame
+games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
+
+# Select features we care about correlation
+features_to_correlate = list(mechanics_encoded.columns) + list(domains_encoded.columns) 
+
+favorite_game_title = 'The Quest for El Dorado'  # Replace with the actual favorite game name
+if favorite_game_title not in games['Name'].values:
+    raise ValueError(f"The game '{favorite_game_title}' is not found in the dataset.")
+favorite_index = games[games['Name'] == favorite_game_title].index[0]
+# Get the feature vector for the favorite game
+favorite_vector = games.loc[favorite_index, features_to_correlate].values
+
+# Calculate Pearson correlation between the favorite game vector and all games
+correlations = pearson_correlation(favorite_vector, games[features_to_correlate].values)
+
+# Add correlations to the DataFrame
+games['pearson_correlation'] = correlations
+
+# Display the top 10 recommended games based on Pearson correlation
+recommended_games = games.sort_values(by='pearson_correlation', ascending=False).head(11)
+print(recommended_games[['Name','Rating Average','Year Published', 'pearson_correlation']])
 
 
-games = pd.concat([games, mechanics_df, domains_df], axis=1)
-print(games.tail(10))
