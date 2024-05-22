@@ -31,7 +31,10 @@ games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
 # Select features we care about correlation
 features_to_correlate = list(mechanics_encoded.columns) + list(domains_encoded.columns) 
 
-favorite_game_title = 'Tsuro'  # Replace with the actual favorite game name
+favorite_game_title = 'The Ancient World'  
+
+print("Recommendations for game:", favorite_game_title," using Pearson Correlation")
+
 if favorite_game_title not in games['Name'].values:
     raise ValueError(f"The game '{favorite_game_title}' is not found in the dataset.")
 favorite_index = games[games['Name'] == favorite_game_title].index[0]
@@ -51,8 +54,11 @@ games['pearson_correlation'] = correlations
 # Combine Pearson correlation and normalized rating average to favour games with higher ratings in recommendations
 games['recommendation_score'] = 0.5 * games['pearson_correlation'] + 0.5 * games['Rating Average Normalized']
 
+# Remove the favorite game from the recommendations
+games = games[games['Name'] != favorite_game_title]
+
 # Display the top 10 recommended games based on Pearson correlation
-recommended_games = games.sort_values(by='recommendation_score', ascending=False).head(10)
+recommended_games = games.sort_values(by='recommendation_score', ascending=False).head(20)
 print(recommended_games[['Name', 'Rating Average', 'Year Published', 'pearson_correlation', 'Rating Average Normalized', 'recommendation_score']])
 
 
