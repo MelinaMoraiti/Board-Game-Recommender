@@ -31,34 +31,43 @@ games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
 # Select features we care about correlation
 features_to_correlate = list(mechanics_encoded.columns) + list(domains_encoded.columns) 
 
-favorite_game_title = 'The Ancient World'  
+favorite_game_titles = ['Forbidden Island']  
+# Ensure all favorite games are in the dataset
+for title in favorite_game_titles:
+    if title not in games['Name'].values:
+        raise ValueError(f"The game '{title}' is not found in the dataset.")
+print("Recommendations for game:", favorite_game_titles)
 
-print("Recommendations for game:", favorite_game_title," using Pearson Correlation")
-
-if favorite_game_title not in games['Name'].values:
-    raise ValueError(f"The game '{favorite_game_title}' is not found in the dataset.")
-favorite_index = games[games['Name'] == favorite_game_title].index[0]
+favorite_indices = [games[games['Name'] == title].index[0] for title in favorite_game_titles]
 # Get the feature vector for the favorite game
-favorite_vector = games.loc[favorite_index, features_to_correlate].values
+favorite_vectors = games.loc[favorite_indices, features_to_correlate].values
 
 # Calculate Pearson correlation between the favorite game vector and all games
-correlations = pearson_correlation(favorite_vector, games[features_to_correlate].values)
+correlations = np.array([pearson_correlation(favorite_vectors[i], games[features_to_correlate].values) for i in range(len(favorite_vectors))])
+average_correlations = correlations.mean(axis=0)
+games['pearson_correlation'] = average_correlations
+
+cos_similarities = cosine_similarity(favorite_vectors,games[features_to_correlate].values)
+average_similarities = cos_similarities.mean(axis=0)
+games['cosine_similarity'] = average_similarities
 
 # Normalize the rating average to the range [0, 1]
 scaler = MinMaxScaler()
 games['Rating Average Normalized'] = scaler.fit_transform(games[['Rating Average']])
 
-# Add correlations to the DataFrame
-games['pearson_correlation'] = correlations
-
 # Combine Pearson correlation and normalized rating average to favour games with higher ratings in recommendations
-games['recommendation_score'] = 0.5 * games['pearson_correlation'] + 0.5 * games['Rating Average Normalized']
+games['combined_score_cosine'] = 0.5 * games['cosine_similarity'] + 0.5 * games['Rating Average Normalized'] 
+games['combined_score_pearson'] = 0.5 * games['pearson_correlation'] + 0.5 * games['Rating Average Normalized'] 
+# Remove favorite games from recommendations
+recommendations_cosine = games[~games['Name'].isin(favorite_game_titles)].sort_values(by='combined_score_cosine', ascending=False)
+recommendations_pearson = games[~games['Name'].isin(favorite_game_titles)].sort_values(by='combined_score_pearson', ascending=False)
 
-# Remove the favorite game from the recommendations
-games = games[games['Name'] != favorite_game_title]
+# Display the top 10 recommended games for both methods
+print("Top 10 Recommended Games based on Cosine Similarity:")
+print(recommendations_cosine[['Name', 'Rating Average', 'Year Published', 'combined_score_cosine']].head(10))
 
-# Display the top 10 recommended games based on Pearson correlation
-recommended_games = games.sort_values(by='recommendation_score', ascending=False).head(20)
-print(recommended_games[['Name', 'Rating Average', 'Year Published', 'pearson_correlation', 'Rating Average Normalized', 'recommendation_score']])
+print("\nTop 10 Recommended Games based on Pearson Correlation:")
+print(recommendations_pearson[['Name', 'Rating Average', 'Year Published', 'combined_score_pearson']].head(10))
+
 
 
