@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
+import joblib
 
 games = pd.read_excel("dataset/BGG_Data_Set.xlsx")
 # Replace zeroes in 'years' with nan
@@ -29,6 +30,7 @@ games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
 # Save the preprocessed data
 games.to_csv("dataset/preprocessed_games.csv", index=False)
 
-
-
+# Save the MultiLabelBinarizer objects
+joblib.dump(mlb_mechanics, 'mlb_mechanics.pkl')
+joblib.dump(mlb_domains, 'mlb_domains.pkl')
 
