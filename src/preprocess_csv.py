@@ -14,7 +14,8 @@ def load_and_merge_data():
     boardgames_df = categories_df.merge(mechanics, on='BGGId', how='left')\
                                  .merge(themes, on='BGGId', how='left')\
                                  .merge(subcategories, on='BGGId', how='left')
-
+    # Drop the rows where at least one element is missing.
+    boardgames_df.dropna()
     return boardgames_df
 
 def save_boardgames_df(df, path='datasets/boardgames_df.csv'):
