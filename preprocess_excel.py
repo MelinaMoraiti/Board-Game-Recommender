@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
 import joblib
 
-games = pd.read_excel("dataset/BGG_Data_Set.xlsx")
+games = pd.read_excel("raw-datasets/BGG_Data_Set.xlsx")
 # Replace zeroes in 'years' with nan
 games["Year Published"].replace(0, np.nan, inplace=True)
 median_year = games['Year Published'].median()
@@ -28,7 +28,7 @@ domains_encoded = pd.DataFrame(mlb_domains.fit_transform(games['Domains']), colu
 games = pd.concat([games, mechanics_encoded, domains_encoded], axis=1)
 
 # Save the preprocessed data
-games.to_csv("dataset/preprocessed_games.csv", index=False)
+games.to_csv("datasets/preprocessed_games.csv", index=False)
 
 # Save the MultiLabelBinarizer objects
 joblib.dump(mlb_mechanics, 'mlb_mechanics.pkl')

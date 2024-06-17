@@ -1,10 +1,10 @@
 import pandas as pd
 
 def load_and_merge_data():
-    games = pd.read_csv('datasets/games.csv')
-    mechanics = pd.read_csv('datasets/mechanics.csv')
-    themes = pd.read_csv('datasets/themes.csv')
-    subcategories = pd.read_csv('datasets/subcategories.csv')
+    games = pd.read_csv('raw-datasets/games.csv')
+    mechanics = pd.read_csv('raw-datasets/mechanics.csv')
+    themes = pd.read_csv('raw-datasets/themes.csv')
+    subcategories = pd.read_csv('raw-datasets/subcategories.csv')
 
     # Define the categories to extract from games dataframe
     categories = ['Cat:Thematic', 'Cat:War', 'Cat:Strategy', 'Cat:Family', 'Cat:CGS', 'Cat:Abstract', 'Cat:Party', 'Cat:Childrens']
