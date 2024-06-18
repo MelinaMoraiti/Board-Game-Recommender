@@ -8,7 +8,7 @@ def load_and_merge_data():
 
     # Define the categories to extract from games dataframe
     categories = ['Cat:Thematic', 'Cat:War', 'Cat:Strategy', 'Cat:Family', 'Cat:CGS', 'Cat:Abstract', 'Cat:Party', 'Cat:Childrens']
-    categories_df = games[['BGGId', 'Name', 'AvgRating'] + categories]
+    categories_df = games[['BGGId', 'Name', 'AvgRating', 'BayesAvgRating'] + categories]
 
     # Merge datasets on BGGId
     boardgames_df = categories_df.merge(mechanics, on='BGGId', how='left')\
